@@ -12,6 +12,7 @@ const useInMemoryStore = !MONGODB_URI;
 
 let mongoConnectPromise;
 let memoryState;
+let forceMemoryFallback = false;
 
 if (useInMemoryStore) {
   console.warn('MONGODB_URI is missing. Running with in-memory storage (data resets on restart).');
@@ -72,22 +73,32 @@ function hasAnyData(state) {
   return allowedKeys.some((key) => Array.isArray(state[key]) && state[key].length > 0);
 }
 
+function isMemoryMode() {
+  return useInMemoryStore || forceMemoryFallback;
+}
+
 async function ensureMongoConnected() {
-  if (useInMemoryStore) return;
+  if (isMemoryMode()) return;
   if (mongoose.connection.readyState === 1) return;
 
   if (!mongoConnectPromise) {
     mongoConnectPromise = mongoose.connect(MONGODB_URI).catch((error) => {
       mongoConnectPromise = null;
+      forceMemoryFallback = true;
+      console.warn(`MongoDB connection failed, switching to in-memory mode: ${error.message}`);
       throw error;
     });
   }
 
-  await mongoConnectPromise;
+  try {
+    await mongoConnectPromise;
+  } catch (_error) {
+    // keep app running with in-memory fallback
+  }
 }
 
 async function getOrCreateState() {
-  if (useInMemoryStore) {
+  if (isMemoryMode()) {
     if (!memoryState) {
       memoryState = {
         appId: APP_STATE_ID,
@@ -127,7 +138,7 @@ app.get('/api/health', (_req, res) => {
   res.json({
     ok: true,
     mongo: mongoose.connection.readyState === 1,
-    storage: useInMemoryStore ? 'memory' : 'mongodb'
+    storage: isMemoryMode() ? 'memory' : 'mongodb'
   });
 });
 
@@ -154,7 +165,7 @@ app.patch('/api/state', async (req, res, next) => {
       return res.status(400).json({ error: 'No valid state keys provided.' });
     }
 
-    if (useInMemoryStore) {
+    if (isMemoryMode()) {
       const state = await getOrCreateState();
       Object.keys(updates).forEach((key) => {
         state[key] = updates[key];
@@ -205,7 +216,7 @@ app.post('/api/migrate-local-state', async (req, res, next) => {
       updates[key] = Object.prototype.hasOwnProperty.call(incomingState, key) ? incomingState[key] : [];
     });
 
-    if (useInMemoryStore) {
+    if (isMemoryMode()) {
       const state = await getOrCreateState();
       allowedKeys.forEach((key) => {
         state[key] = updates[key];
@@ -253,28 +264,36 @@ app.use((error, _req, res, _next) => {
 
 async function start() {
   await ensureMongoConnected();
-  if (useInMemoryStore) {
+  if (isMemoryMode()) {
     console.log('Server started with in-memory storage.');
   } else {
     console.log('MongoDB connected successfully.');
   }
 
-  app.listen(PORT, () => {
-    console.log(`Server running at http://localhost:${PORT}`);
-  });
+  const maxPortRetries = 10;
+  const tryListen = (port, retriesLeft) => {
+    const server = app.listen(port, () => {
+      console.log(`Server running at http://localhost:${port}`);
+    });
+
+    server.on('error', (error) => {
+      if (error.code === 'EADDRINUSE' && retriesLeft > 0) {
+        console.warn(`Port ${port} is busy, retrying on ${port + 1}...`);
+        tryListen(port + 1, retriesLeft - 1);
+        return;
+      }
+
+      throw error;
+    });
+  };
+
+  tryListen(PORT, maxPortRetries);
 }
 
 if (isVercel) {
   module.exports = async (req, res) => {
-    try {
-      await ensureMongoConnected();
-      return app(req, res);
-    } catch (error) {
-      console.error('Failed to handle request:', error.message);
-      res.statusCode = 500;
-      res.setHeader('Content-Type', 'application/json');
-      res.end(JSON.stringify({ error: 'Database connection failed.' }));
-    }
+    await ensureMongoConnected();
+    return app(req, res);
   };
 } else {
   start().catch((error) => {
