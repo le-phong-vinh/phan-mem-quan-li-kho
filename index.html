@@ -1,0 +1,1087 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản Lý Kho - NGỌT Teacup</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">
+                NGỌT Teacup
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#" data-section="dashboard">
+                            <i class="bi bi-speedometer2"></i> Tổng Quan
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-section="products">
+                            <i class="bi bi-box-seam"></i> Nguyên Liệu
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-section="import">
+                            <i class="bi bi-arrow-down-circle"></i> Nhập
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-section="export">
+                            <i class="bi bi-arrow-up-circle"></i> Xuất
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-section="inventory">
+                            <i class="bi bi-boxes"></i> Tồn
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-section="monthly-report">
+                            <i class="bi bi-calendar-check"></i> Báo Cáo
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-section="adjustments">
+                            <i class="bi bi-sliders"></i> Điều Chỉnh
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-section="revenue">
+                            <i class="bi bi-cash-coin"></i> Doanh Thu
+                        </a>
+                    </li>
+                    <li class="nav-item" style="display: none;">
+                        <a class="nav-link" href="#" data-section="statistics">
+                            <i class="bi bi-graph-up"></i> Thống Kê
+                        </a>
+                    </li>
+                </ul>
+                <div class="d-flex align-items-center ms-3">
+                    <button id="reloadDbBtn" class="btn btn-sm btn-outline-light me-3" onclick="app.reloadFromMongoDB()"
+                        title="Tải lại dữ liệu từ MongoDB">
+                        <i class="bi bi-arrow-clockwise"></i> Tải Lại DB
+                    </button>
+                    <small id="dbStatusIndicator" class="text-white me-3">
+                        <i class="bi bi-cloud-fill"></i> Đang kiểm tra MongoDB
+                    </small>
+                    <small id="autoSaveIndicator" class="text-white" style="opacity: 0; transition: opacity 0.3s;">
+                        <i class="bi bi-check-circle-fill"></i> Đã lưu
+                    </small>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container-fluid mt-4">
+        <!-- Dashboard Section -->
+        <div id="dashboard" class="content-section">
+            <div class="d-flex align-items-center mb-4">
+                <h2 class="mb-0"><i class="bi bi-speedometer2"></i> Tổng Quan</h2>
+            </div>
+            <div class="row">
+                <div class="col-md-3 mb-3">
+                    <div class="card text-white bg-success">
+                        <div class="card-body">
+                            <h5 class="card-title">Tổng Nguyên Liệu</h5>
+                            <h2 id="totalProducts">0</h2>
+                            <small>Loại nguyên liệu</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card text-white bg-info">
+                        <div class="card-body">
+                            <h5 class="card-title">Giá Trị Tồn Kho</h5>
+                            <h2 id="totalInventory">0</h2>
+                            <small>Đơn vị</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card text-white bg-warning">
+                        <div class="card-body">
+                            <h5 class="card-title">Nhập Hôm Nay</h5>
+                            <h2 id="todayImport">0</h2>
+                            <small>Đơn vị</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card text-white bg-danger">
+                        <div class="card-body">
+                            <h5 class="card-title">Xuất Sản Xuất Hôm Nay</h5>
+                            <h2 id="todayExport">0</h2>
+                            <small>Đơn vị nguyên liệu</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row mt-4">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5>Xuất Nguyên Liệu 7 Ngày Qua</h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="weeklyRevenueChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5>Sản Phẩm Sắp Hết</h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="lowStockProducts"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Products Section -->
+        <div id="products" class="content-section" style="display: none;">
+            <h2 class="mb-4"><i class="bi bi-box-seam"></i> Quản Lý Nguyên Liệu</h2>
+            <button class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#productModal"
+                onclick="openProductModal()">
+                <i class="bi bi-plus-circle"></i> Thêm Nguyên Liệu
+            </button>
+            <div class="card">
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <input type="text" class="form-control" id="searchProduct"
+                                placeholder="Tìm kiếm nguyên liệu...">
+                        </div>
+                    </div>
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Mã NL</th>
+                                <th>Tên Nguyên Liệu</th>
+                                <th>Đơn Vị</th>
+                                <th>Giá Nhập</th>
+                                <th>Tồn Kho</th>
+                                <th>Giá Trị Tồn</th>
+                                <th>Thao Tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="productsTable"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Import Section -->
+        <div id="import" class="content-section" style="display: none;">
+            <h2 class="mb-4"><i class="bi bi-arrow-down-circle"></i> Nhập Kho</h2>
+            <div class="row">
+                <div class="col-md-5">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5>Phiếu Nhập Kho Mới</h5>
+                        </div>
+                        <div class="card-body">
+                            <form id="importForm">
+                                <input type="hidden" id="importEditId" value="">
+                                <input type="hidden" id="importMode" value="create">
+                                <div class="mb-3">
+                                    <label class="form-label">Sản Phẩm</label>
+                                    <select class="form-select" id="importProduct" required>
+                                        <option value="">-- Chọn sản phẩm --</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Ngày Nhập</label>
+                                    <input type="date" class="form-control" id="importDate" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Số Lượng</label>
+                                    <input type="number" class="form-control" id="importQuantity" min="1" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Giá Nhập (VNĐ)</label>
+                                    <input type="number" class="form-control" id="importPrice" min="0" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Nhà Cung Cấp</label>
+                                    <input type="text" class="form-control" id="importSupplier" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Ghi Chú</label>
+                                    <textarea class="form-control" id="importNote" rows="2"></textarea>
+                                </div>
+                                <div class="d-grid gap-2">
+                                    <button type="submit" class="btn btn-success" id="importSubmitBtn">
+                                        <i class="bi bi-check-circle"></i> <span id="importSubmitText">Xác Nhận Nhập
+                                            Kho</span>
+                                    </button>
+                                    <button type="button" class="btn btn-secondary" id="importCancelBtn"
+                                        style="display: none;" onclick="app.cancelImportEdit()">
+                                        <i class="bi bi-x-circle"></i> Hủy Chỉnh Sửa
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-7">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5>Lịch Sử Nhập Kho</h5>
+                        </div>
+                        <div class="card-body">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Ngày</th>
+                                        <th>Sản Phẩm</th>
+                                        <th>Số Lượng</th>
+                                        <th>Giá</th>
+                                        <th>NCC</th>
+                                        <th>Thao Tác</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="importHistory"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Export Section -->
+        <div id="export" class="content-section" style="display: none;">
+            <h2 class="mb-4"><i class="bi bi-arrow-up-circle"></i> Xuất Nguyên Liệu Sản Xuất</h2>
+            <div class="row">
+                <div class="col-md-5">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5>Phiếu Xuất Nguyên Liệu</h5>
+                        </div>
+                        <div class="card-body">
+                            <form id="exportForm">
+                                <input type="hidden" id="exportEditId" value="">
+                                <input type="hidden" id="exportMode" value="create">
+                                <div class="mb-3">
+                                    <label class="form-label">Nguyên Liệu</label>
+                                    <select class="form-select" id="exportProduct" required>
+                                        <option value="">-- Chọn nguyên liệu --</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Ngày Xuất</label>
+                                    <input type="date" class="form-control" id="exportDate" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Số Lượng Xuất</label>
+                                    <input type="number" class="form-control" id="exportQuantity" min="1" required>
+                                    <small class="text-muted">Tồn kho: <span id="exportStockInfo">0</span></small>
+                                </div>
+                                <div class="mb-3" style="display: none;">
+                                    <label class="form-label">Giá (VNĐ)</label>
+                                    <input type="number" class="form-control" id="exportPrice" min="0" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Mục Đích Sử Dụng</label>
+                                    <input type="text" class="form-control" id="exportCustomer"
+                                        placeholder="VD: Pha trà sữa, làm topping...">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Ghi Chú</label>
+                                    <textarea class="form-control" id="exportNote" rows="2"
+                                        placeholder="Ghi chú về việc xuất nguyên liệu..."></textarea>
+                                </div>
+                                <div class="d-grid gap-2">
+                                    <button type="submit" class="btn btn-warning" id="exportSubmitBtn">
+                                        <i class="bi bi-check-circle"></i> <span id="exportSubmitText">Xác Nhận Xuất
+                                            Nguyên Liệu</span>
+                                    </button>
+                                    <button type="button" class="btn btn-secondary" id="exportCancelBtn"
+                                        style="display: none;" onclick="app.cancelExportEdit()">
+                                        <i class="bi bi-x-circle"></i> Hủy Chỉnh Sửa
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-7">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5>Lịch Sử Xuất Nguyên Liệu</h5>
+                        </div>
+                        <div class="card-body">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Ngày</th>
+                                        <th>Nguyên Liệu</th>
+                                        <th>Số Lượng</th>
+                                        <th>Mục Đích</th>
+                                        <th>Ghi Chú</th>
+                                        <th>Thao Tác</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="exportHistory"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Inventory Section -->
+        <div id="inventory" class="content-section" style="display: none;">
+            <h2 class="mb-4"><i class="bi bi-boxes"></i> Tồn Kho</h2>
+            <div class="card">
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <input type="text" class="form-control" id="searchInventory"
+                                placeholder="Tìm kiếm sản phẩm...">
+                        </div>
+                    </div>
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Mã SP</th>
+                                <th>Tên Sản Phẩm</th>
+                                <th>Đơn Vị</th>
+                                <th>Tồn Kho</th>
+                                <th>Giá Trị Tồn</th>
+                                <th>Trạng Thái</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inventoryTable"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Monthly Report Section -->
+        <div id="monthly-report" class="content-section" style="display: none;">
+            <h2 class="mb-4"><i class="bi bi-calendar-check"></i> Báo Cáo</h2>
+
+            <div class="row mb-4">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="card-title mb-0">Quản Lý Báo Cáo</h5>
+
+                            </div>
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-4">
+                                    <label for="dailyReportDate" class="form-label mb-1">Chọn Ngày</label>
+                                    <input type="date" class="form-control" id="dailyReportDate">
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="monthlyReportMonth" class="form-label mb-1">Chọn Tháng</label>
+                                    <input type="month" class="form-control" id="monthlyReportMonth">
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="yearlyReportYear" class="form-label mb-1">Chọn Năm</label>
+                                    <input type="number" class="form-control" id="yearlyReportYear" min="2000"
+                                        max="2100" step="1">
+                                </div>
+                            </div>
+
+                            <div>
+                                <button class="btn btn-success me-2" onclick="app.showDailyReport()">
+                                    <i class="bi bi-calendar-day"></i> Xem Báo Cáo Ngày
+                                </button>
+                                <button class="btn btn-info me-2" onclick="app.showMonthlyReport()">
+                                    <i class="bi bi-calendar-month"></i> Xem Báo Cáo Tháng
+                                </button>
+                                <button class="btn btn-primary me-2" onclick="app.showYearlyReport()">
+                                    <i class="bi bi-calendar-year"></i> Xem Báo Cáo Năm
+                                </button>
+                                <button class="btn btn-secondary" onclick="app.createMonthlySnapshot()">
+                                    <i class="bi bi-file-earmark-plus"></i> Tạo Snapshot Tháng
+                                </button>
+                            </div>
+
+                            <p class="text-muted mb-2">
+                                <i class="bi bi-file-earmark-spreadsheet text-success"></i>
+                                <strong>Báo Cáo Ngày:</strong> Chọn ngày bất kỳ để xem hoạt động ngày đó trực tiếp trên
+                                web.
+                            </p>
+                            <p class="text-muted mb-2">
+                                <i class="bi bi-file-earmark-bar-graph text-info"></i>
+                                <strong>Báo Cáo Tháng:</strong> Chọn tháng bất kỳ để xem tổng hợp hoạt động tháng đó
+                                trên web.
+                            </p>
+                            <p class="text-muted mb-0">
+                                <i class="bi bi-file-earmark-plus text-primary"></i>
+                                <strong>Báo Cáo Năm:</strong> Chọn năm bất kỳ để xem tổng hợp hoạt động năm đó trên web.
+                            </p>
+                            <hr class="my-3">
+                            <h6 class="mb-3">Báo Cáo Tồn Kho</h6>
+                            <div class="d-flex flex-wrap gap-2 mb-3">
+
+
+                              
+
+                                <button class="btn btn-success me-2" onclick="app.showInventoryByDay()">
+                                    <i class="bi bi-calendar-day"></i> Tồn Kho Theo Ngày
+                                </button>
+                                <button class="btn btn-info me-2" onclick="app.showInventoryByMonth()">
+                                    <i class="bi bi-calendar-month"></i> Tồn Kho Theo Tháng
+                                </button>
+                                <button class="btn btn-primary me-2" onclick="app.showInventoryByYear()">
+                                    <i class="bi bi-calendar-year"></i> Tồn Kho Theo Năm
+                                </button>
+                            </div>
+                            <p class="text-muted mb-2">
+                                <i class="bi bi-file-earmark-spreadsheet text-success"></i>
+                                <strong>Báo Cáo Ngày:</strong> Chọn ngày bất kỳ để xem tồn kho ngày đó trực tiếp trên
+                                web.
+                            </p>
+                            <p class="text-muted mb-2">
+                                <i class="bi bi-file-earmark-bar-graph text-info"></i>
+                                <strong>Báo Cáo Tháng:</strong> Chọn tháng bất kỳ để xem tồn kho tháng đó trên web.
+                            </p>
+                            <p class="text-muted mb-0">
+                                <i class="bi bi-file-earmark-plus text-primary"></i>
+                                <strong>Báo Cáo Năm:</strong> Chọn năm bất kỳ để xem tồn kho năm đó trên web.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Danh Sách Báo Cáo Đã Lưu</h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="monthlyReportsList">
+                                <p class="text-muted text-center py-4">Chưa có báo cáo nào. Hãy tạo báo cáo đầu tiên!
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Adjustments Section (NEW) -->
+        <div id="adjustments" class="content-section" style="display: none;">
+            <h2 class="mb-4"><i class="bi bi-sliders"></i> Điều Chỉnh Tồn Kho</h2>
+            <div class="row">
+                <div class="col-md-5">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 id="adjustmentFormTitle">Phiếu Điều Chỉnh Kho</h5>
+                        </div>
+                        <div class="card-body">
+                            <form id="adjustmentForm">
+                                <input type="hidden" id="editAdjustmentId" value="">
+                                <input type="hidden" id="adjustmentMode" value="create">
+                                <div class="mb-3">
+                                    <label class="form-label">Nguyên Liệu</label>
+                                    <select class="form-select" id="adjustmentProduct" required>
+                                        <option value="">-- Chọn nguyên liệu --</option>
+                                    </select>
+                                    <small class="text-muted">Tồn kho hiện tại: <strong
+                                            id="adjustmentCurrentStock">0</strong></small>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Loại Điều Chỉnh</label>
+                                    <select class="form-select" id="adjustmentType" required>
+                                        <option value="increase">Tăng tồn kho</option>
+                                        <option value="decrease">Giảm tồn kho</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Số Lượng Điều Chỉnh</label>
+                                    <input type="number" class="form-control" id="adjustmentQuantity" min="0"
+                                        step="0.01" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Ngày Điều Chỉnh</label>
+                                    <input type="date" class="form-control" id="adjustmentDate" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Lý Do</label>
+                                    <select class="form-select" id="adjustmentReason" required>
+                                        <option value="damaged">Hàng hỏng</option>
+                                        <option value="lost">Mất mát/Thất thoát</option>
+                                        <option value="expired">Hết hạn sử dụng</option>
+                                        <option value="inventory_check">Kiểm kê chênh lệch</option>
+                                        <option value="correction">Sửa sai số liệu</option>
+                                        <option value="other">Lý do khác</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Ghi Chú Chi Tiết</label>
+                                    <textarea class="form-control" id="adjustmentNote" rows="3"
+                                        placeholder="Mô tả chi tiết lý do điều chỉnh..."></textarea>
+                                </div>
+                                <div class="d-grid gap-2" id="adjustmentFormButtons">
+                                    <button type="submit" class="btn btn-primary" id="adjustmentSubmitBtn">
+                                        <i class="bi bi-check-circle"></i> <span id="submitBtnText">Xác Nhận Điều
+                                            Chỉnh</span>
+                                    </button>
+                                    <button type="button" class="btn btn-secondary" id="adjustmentCancelBtn"
+                                        style="display: none;" onclick="app.cancelAdjustmentEdit()">
+                                        <i class="bi bi-x-circle"></i> Hủy Chỉnh Sửa
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-7">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5>Lịch Sử Điều Chỉnh</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Ngày</th>
+                                            <th>Nguyên Liệu</th>
+                                            <th>Loại</th>
+                                            <th>Số Lượng</th>
+                                            <th>Lý Do</th>
+                                            <th>Thao Tác</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="adjustmentHistory"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Revenue Control Section -->
+        <div id="revenue" class="content-section" style="display: none;">
+            <h2 class="mb-4"><i class="bi bi-cash-coin"></i> Kiểm Soát Doanh Thu</h2>
+
+            <!-- Tổng quan -->
+            <div class="row mb-4">
+                <div class="col-md-2">
+                    <div class="card border-success">
+                        <div class="card-body text-center p-2">
+                            <i class="bi bi-cash-stack fs-4 text-success"></i>
+                            <h6 class="mt-2" id="revenueCashTotal">0 ₫</h6>
+                            <small class="text-muted">Thu Tiền Mặt</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="card border-info">
+                        <div class="card-body text-center p-2">
+                            <i class="bi bi-credit-card fs-4 text-info"></i>
+                            <h6 class="mt-2" id="revenueTransferTotal">0 ₫</h6>
+                            <small class="text-muted">Thu Chuyển Khoản</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="card border-danger">
+                        <div class="card-body text-center p-2">
+                            <i class="bi bi-wallet2 fs-4 text-danger"></i>
+                            <h6 class="mt-2" id="expenseTotal">0 ₫</h6>
+                            <small class="text-muted">Chi Tiêu</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="card border-primary">
+                        <div class="card-body text-center p-2">
+                            <i class="bi bi-graph-up fs-4 text-primary"></i>
+                            <h6 class="mt-2" id="revenueNetTotal">0 ₫</h6>
+                            <small class="text-muted">Lợi Nhuận</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="card border-warning">
+                        <div class="card-body text-center p-2">
+                            <i class="bi bi-piggy-bank fs-4 text-warning"></i>
+                            <h6 class="mt-2" id="totalCashRemaining">0 ₫</h6>
+                            <small class="text-muted"><strong>Tổng Tiền Mặt</strong></small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="card border-success">
+                        <div class="card-body text-center p-2">
+                            <i class="bi bi-bank fs-4 text-success"></i>
+                            <h6 class="mt-2" id="totalAccountMoney">0 ₫</h6>
+                            <small class="text-muted"><strong>Tổng Tài Khoản</strong></small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form ghi nhận thu/chi nằm ngang -->
+            <div class="row mb-4">
+                <!-- Form ghi nhận thu -->
+                <div class="col-md-6">
+                    <div class="card h-100">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0"><i class="bi bi-plus-circle"></i> Ghi Nhận Thu</h5>
+                        </div>
+                        <div class="card-body">
+                            <form id="revenueIncomeForm">
+                                <div class="mb-3">
+                                    <label class="form-label">Loại Thu</label>
+                                    <select class="form-select" id="incomeCategory" required>
+                                        <option value="sales">Bán hàng</option>
+                                        <option value="service">Dịch vụ</option>
+                                        <option value="other">Thu nhập khác</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Hình Thức</label>
+                                    <select class="form-select" id="incomePaymentMethod" required>
+                                        <option value="cash">Tiền mặt</option>
+                                        <option value="transfer">Chuyển khoản</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Số Tiền (₫)</label>
+                                    <input type="number" class="form-control" id="incomeAmount" min="0" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Ngày Giao Dịch</label>
+                                    <input type="date" class="form-control" id="incomeDate" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Mô Tả</label>
+                                    <input type="text" class="form-control" id="incomeDescription"
+                                        placeholder="Ví dụ: Bán 10 ly trà sữa" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Ghi Chú</label>
+                                    <textarea class="form-control" id="incomeNote" rows="2"></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-success w-100">
+                                    <i class="bi bi-check-circle"></i> Ghi Nhận Thu
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form ghi nhận chi -->
+                <div class="col-md-6">
+                    <div class="card h-100">
+                        <div class="card-header bg-danger text-white">
+                            <h5 class="mb-0"><i class="bi bi-dash-circle"></i> Ghi Nhận Chi</h5>
+                        </div>
+                        <div class="card-body">
+                            <form id="revenueExpenseForm">
+                                <div class="mb-3">
+                                    <label class="form-label">Loại Chi</label>
+                                    <select class="form-select" id="expenseCategory" required>
+                                        <option value="ingredient">Nhập nguyên liệu</option>
+                                        <option value="salary">Lương nhân viên</option>
+                                        <option value="rent">Thuê mặt bằng</option>
+                                        <option value="utilities">Điện nước</option>
+                                        <option value="marketing">Marketing</option>
+                                        <option value="equipment">Thiết bị</option>
+                                        <option value="maintenance">Bảo trì</option>
+                                        <option value="other">Chi phí khác</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Hình Thức</label>
+                                    <select class="form-select" id="expensePaymentMethod" required>
+                                        <option value="cash">Tiền mặt</option>
+                                        <option value="transfer">Chuyển khoản</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Số Tiền (₫)</label>
+                                    <input type="number" class="form-control" id="expenseAmount" min="0" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Ngày Giao Dịch</label>
+                                    <input type="date" class="form-control" id="expenseDate" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Mô Tả</label>
+                                    <input type="text" class="form-control" id="expenseDescription"
+                                        placeholder="Ví dụ: Mua đường 50kg" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Ghi Chú</label>
+                                    <textarea class="form-control" id="expenseNote" rows="2"></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-danger w-100">
+                                    <i class="bi bi-check-circle"></i> Ghi Nhận Chi
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lịch sử giao dịch -->
+            <div class="row mb-4">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0"><i class="bi bi-clock-history"></i> Lịch Sử Giao Dịch</h5>
+                                <div>
+                                    <select class="form-select form-select-sm" id="revenueFilterType"
+                                        style="width: auto; display: inline-block;">
+                                        <option value="all">Tất cả</option>
+                                        <option value="income">Thu</option>
+                                        <option value="expense">Chi</option>
+                                    </select>
+                                    <select class="form-select form-select-sm ms-2" id="revenueFilterPeriod"
+                                        style="width: auto; display: inline-block;">
+                                        <option value="all">Tất cả</option>
+                                        <option value="day">Theo ngày</option>
+                                        <option value="week">Tuần này</option>
+                                        <option value="month">Theo tháng</option>
+                                        <option value="year">Theo năm</option>
+                                    </select>
+                                    <input type="date" class="form-control form-control-sm ms-2" id="revenueFilterDate"
+                                        style="width: auto; display: inline-block;">
+                                    <input type="month" class="form-control form-control-sm ms-2"
+                                        id="revenueFilterMonth" style="width: auto; display: none;">
+                                    <input type="number" class="form-control form-control-sm ms-2"
+                                        id="revenueFilterYear" min="2000" max="2100" step="1"
+                                        style="width: 110px; display: none;" placeholder="Năm">
+                                </div>
+                            </div>
+                            <div class="d-flex flex-wrap gap-2 mt-3 justify-content-end">
+                                <button class="btn btn-outline-dark btn-sm" onclick="app.showRevenueReportAll()">
+                                    <i class="bi bi-clock-history"></i> Báo Cáo Toàn Bộ
+                                </button>
+                                <button class="btn btn-outline-success btn-sm" onclick="app.showRevenueReportByDay()">
+                                    <i class="bi bi-cash-coin"></i> Báo Cáo Doanh Thu Ngày
+                                </button>
+                                <button class="btn btn-outline-info btn-sm" onclick="app.showRevenueReportByMonth()">
+                                    <i class="bi bi-cash-coin"></i> Báo Cáo Doanh Thu Tháng
+                                </button>
+                                <button class="btn btn-outline-primary btn-sm" onclick="app.showRevenueReportByYear()">
+                                    <i class="bi bi-cash-coin"></i> Báo Cáo Doanh Thu Năm
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+                                <table class="table table-striped table-sm">
+                                    <thead class="sticky-top bg-white">
+                                        <tr>
+                                            <th>Thời Gian</th>
+                                            <th>Loại</th>
+                                            <th>Danh Mục</th>
+                                            <th>Mô Tả</th>
+                                            <th>Hình Thức</th>
+                                            <th>Số Tiền</th>
+                                            <th>Thao Tác</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="revenueTransactionsList">
+                                        <tr>
+                                            <td colspan="7" class="text-center text-muted">Chưa có giao dịch nào</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Thống kê theo danh mục -->
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="bi bi-pie-chart"></i> Thống Kê Theo Danh Mục</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6 class="text-success"><i class="bi bi-arrow-up-circle"></i> Thu Nhập</h6>
+                                    <div id="incomeCategoryStats"></div>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6 class="text-danger"><i class="bi bi-arrow-down-circle"></i> Chi Tiêu</h6>
+                                    <div id="expenseCategoryStats"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics Section -->
+        <div id="statistics" class="content-section" style="display: none;">
+            <h2 class="mb-4"><i class="bi bi-graph-up"></i> Thống Kê Doanh Thu</h2>
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <h6>Doanh Thu Hôm Nay</h6>
+                            <h3 class="text-success" id="todayRevenue">0 VNĐ</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <h6>Doanh Thu Tuần Này</h6>
+                            <h3 class="text-info" id="weekRevenue">0 VNĐ</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <h6>Doanh Thu Tháng Này</h6>
+                            <h3 class="text-primary" id="monthRevenue">0 VNĐ</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <h6>Lợi Nhuận Ước Tính</h6>
+                            <h3 class="text-warning" id="estimatedProfit">0 VNĐ</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5>Biểu Đồ Doanh Thu Theo Tháng</h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="monthlyRevenueChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5>Top Sản Phẩm Bán Chạy</h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="topProductsChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row mt-4">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5>Chi Tiết Doanh Thu Theo Sản Phẩm</h5>
+                        </div>
+                        <div class="card-body">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Sản Phẩm</th>
+                                        <th>Số Lượng Bán</th>
+                                        <th>Doanh Thu</th>
+                                        <th>Chi Phí Nhập</th>
+                                        <th>Lợi Nhuận</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="productRevenueTable"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+    <!-- Revenue Transaction Edit Modal -->
+    <div class="modal fade" id="revenueEditModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header" id="revenueEditModalHeader">
+                    <h5 class="modal-title" id="revenueEditModalTitle">Chỉnh Sửa Giao Dịch</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="revenueEditForm">
+                        <input type="hidden" id="editTransactionId">
+                        <input type="hidden" id="editTransactionType">
+
+                        <div class="mb-3">
+                            <label class="form-label">Loại Giao Dịch</label>
+                            <input type="text" class="form-control" id="editTypeDisplay" readonly>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Danh Mục</label>
+                            <select class="form-select" id="editCategory" required>
+                                <!-- Options will be populated dynamically -->
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Hình Thức Thanh Toán</label>
+                            <select class="form-select" id="editPaymentMethod" required>
+                                <option value="cash">Tiền mặt</option>
+                                <option value="transfer">Chuyển khoản</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Số Tiền (₫)</label>
+                            <input type="number" class="form-control" id="editAmount" min="0" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Mô Tả</label>
+                            <input type="text" class="form-control" id="editDescription" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Ngày Giao Dịch</label>
+                            <input type="date" class="form-control" id="editTransactionDate" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Ghi Chú</label>
+                            <textarea class="form-control" id="editNote" rows="2"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn btn-primary" onclick="app.saveRevenueEdit()">
+                        <i class="bi bi-check-circle"></i> Lưu Thay Đổi
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Product Modal -->
+    <div class="modal fade" id="productModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="productModalTitle">Thêm Nguyên Liệu Mới</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="productForm">
+                        <input type="hidden" id="productId">
+                        <div class="mb-3" style="display: none;">
+                            <label class="form-label">Mã Nguyên Liệu</label>
+                            <input type="text" class="form-control" id="productCode" readonly>
+                            <small class="text-muted">Mã tự động tạo</small>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Tên Nguyên Liệu</label>
+                            <input type="text" class="form-control" id="productName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Đơn Vị</label>
+                            <input type="text" class="form-control" id="productUnit" placeholder="Bịch, Lít, Kg, Gói..."
+                                required>
+                            <small class="text-muted">Đơn vị cơ bản để tính tồn kho</small>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Đơn Vị Quy Đổi (Tùy chọn)</label>
+                            <div class="input-group">
+                                <span class="input-group-text">1</span>
+                                <input type="text" class="form-control" id="productConversionUnit"
+                                    placeholder="VD: Thùng, Lốc...">
+                                <span class="input-group-text">=</span>
+                                <input type="number" class="form-control" id="productConversionRate" placeholder="24"
+                                    min="1">
+                                <span class="input-group-text" id="productBaseUnitLabel">đơn vị cơ bản</span>
+                            </div>
+                            <small class="text-muted">VD: 1 Thùng = 24 Chai</small>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Giá Nhập (VNĐ)</label>
+                            <input type="number" class="form-control" id="productCostPrice" min="0" required>
+                        </div>
+                        <div class="mb-3" style="display: none;">
+                            <label class="form-label">Giá Bán (VNĐ)</label>
+                            <input type="number" class="form-control" id="productSalePrice" min="0">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Mức Tồn Kho Tối Thiểu</label>
+                            <input type="number" class="form-control" id="productMinStock" value="10" min="0" required>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn btn-primary" onclick="saveProduct()">Lưu</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Google Drive Config Modal -->
+    <div class="modal fade" id="googleDriveModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title"><i class="bi bi-google"></i> Kết Nối Google Drive</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> Kết nối với Google Drive để lưu dữ liệu tự động.
+                        <br><small>Dữ liệu sẽ lưu trong thư mục "QuanLyKho" trên Drive của bạn.</small>
+                    </div>
+                    <div id="googleDriveStatus" class="text-center py-4">
+                        <button class="btn btn-primary btn-lg" onclick="app.connectGoogleDrive()">
+                            <i class="bi bi-google"></i> Đăng Nhập với Google
+                        </button>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Google API Script -->
+    <script src="https://apis.google.com/js/api.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+    <script src="app.js"></script>
+</body>
+
+</html>
